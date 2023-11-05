@@ -14,7 +14,7 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		"Version":     version,
 	}
 
-	err := app.writeJSON(w, 200, data, nil)
+	err := app.writeJSON(w, 200, envelope{"status": data}, nil)
 	if err != nil {
 		app.logger.Error(err.Error())
 		http.Error(w, "The application encountered a problem and could not complete your request",
