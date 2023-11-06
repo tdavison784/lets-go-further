@@ -1,0 +1,15 @@
+GET http://localhost:8000/v1/movies/1
+Accept: application/json
+
+###
+GET http://localhost:8000/v1/healthcheck
+Accept: application/json
+
+###
+POST localhost:8000/v1/movies/
+
+{"title": "Moana", "year": 2017, "runtime": 102, "genres": ["family", "adventure"]}
+
+
+
+
