@@ -9,9 +9,33 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]}
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"], "stars": 4}
 
 
+### Tests that will cause failures
+### test for unknown field name
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"], "stars": 4}
 
 
+### test for max bytes error
+POST localhost:8000/v1/movies
+Accept: application/json
 
+< ./large.json
+
+
+### test for multiple JSON values
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]}{"title": "Tommyboy"}
+
+
+### test for malformed JSON values
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]} :-()>

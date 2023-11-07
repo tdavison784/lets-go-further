@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // Retrieve the "id" URL parameter from the current request context, convert it to an int and return it.
@@ -53,13 +54,18 @@ func (app *application) writeJSON(w http.ResponseWriter, status int, data any, h
 type envelope map[string]any
 
 func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any) error {
+	maxBytes := 1_048_576 // 1MB
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
 	// Decode the request body into the target destination
-	err := json.NewDecoder(r.Body).Decode(dst)
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	err := dec.Decode(dst)
 	if err != nil {
 		// if there is an error during decoding, start the triage
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
-		var invalidmarshalError *json.InvalidUnmarshalError
+		var invalidUnmarshalError *json.InvalidUnmarshalError
+		var maxBytesError *http.MaxBytesError
 
 		switch {
 		// use the errors.As() method to check whether the error has the type *json.SyntaxError
@@ -93,13 +99,35 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 		// to decode(). We catch this and panic, rather than returning an error to our handler. At the end of
 		// this chapter we'll talk about panicking versus returning errors, and discuss why it's an appropriate
 		// thing to do in this specific situation.
-		case errors.As(err, &invalidmarshalError):
+		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
+
+		// If the JSON contains a field which cannot be mapped to the target destination
+		// then Decode() will now return an error message in the format: "json:unknown field "<name>""
+		// We check for this, extract the field name from the error, and interpolate it into our custom
+		// error message.
+		case strings.HasPrefix(err.Error(), "json: unknown field "):
+			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
+			return fmt.Errorf("body contains an unknown key %s", fieldName)
+
+		// Use the errors.As() method to check whether the error has the type *http.MaxBytesError.
+		// If it does, then it means the request body exceeded our size limit of 1MB, and we return a clear message
+		case errors.As(err, &maxBytesError):
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesError.Limit)
 
 		// for everything else return an error message as is
 		default:
 			return err
 		}
 	}
+	// Call Decode() again, using a pointer to an empty anonymous struct as the dest
+	// if the request body only contained a single JSON value this will return an io.EOF error.
+	// so if we get anything else, we know that there is an additional data in the request body, and we return our own
+	// custom error message.
+	err = dec.Decode(&struct{}{})
+	if !errors.Is(err, io.EOF) {
+		return errors.New("body must only contain a single JSON value")
+	}
+
 	return nil
 }
