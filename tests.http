@@ -1,3 +1,4 @@
+### test successfull calls
 GET http://localhost:8000/v1/movies/1
 Accept: application/json
 
@@ -9,14 +10,8 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}
-
-###
-POST localhost:8000/v1/movies/
-Accept: application/json
-
-{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}
-
+{"title": "Moana", "year": 2017, "runtime": "102 mins", "genres": ["family", "adventure"]}
+###End success Tests
 
 ### Tests that will cause failures
 ### test for unknown field name
