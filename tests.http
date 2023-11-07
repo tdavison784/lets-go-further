@@ -9,7 +9,13 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"], "stars": 4}
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}
 
 
 ### Tests that will cause failures
@@ -17,7 +23,7 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"], "stars": 4}
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"], "stars": 4}
 
 
 ### test for max bytes error
@@ -31,11 +37,18 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]}{"title": "Tommyboy"}
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}{"title": "Tommyboy"}
 
 
 ### test for malformed JSON values
 POST localhost:8000/v1/movies/
 Accept: application/json
 
-{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]} :-()>
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]} :-()>
+
+
+### test invalid runtime format
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]}
