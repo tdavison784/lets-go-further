@@ -24,7 +24,10 @@ type config struct {
 	port int
 	env  string
 	db   struct {
-		dsn string
+		dsn          string
+		maxOpenConns int
+		maxIdleConns int
+		maxIdleTime  time.Duration
 	}
 }
 
@@ -43,6 +46,9 @@ func main() {
 	flag.StringVar(&cfg.env, "env", "development", "Environment(DEV|QA|STAGE|PROD)")
 	flag.IntVar(&cfg.port, "port", 4000, "HTTP Server Listening Port")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", os.Getenv("postgresConnString"), "Postgres SQL connection string")
+	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "number of maximum open DB connections")
+	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "number of maximum idle DB connections")
+	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgresSQL max connection idle time")
 	flag.Parse()
 
 	// initialize our logger
@@ -55,6 +61,15 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+
+	// set max open connections for the db sessions
+	db.SetMaxOpenConns(cfg.db.maxOpenConns)
+
+	// set max connection idle time
+	db.SetConnMaxIdleTime(cfg.db.maxIdleTime)
+
+	// set max idle open connections
+	db.SetMaxIdleConns(cfg.db.maxIdleConns)
 
 	// defer a call to db.Close() so that the connection pool is closed before main func exits
 	defer db.Close()
