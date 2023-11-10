@@ -1,0 +1,30 @@
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "year": 2017, "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Coco", "year": 2017, "runtime": "105 mins", "genres": ["family", "adventure"]}
+
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Black Panther", "year": 2018, "runtime": "134 mins", "genres": ["action", "adventure"]}
+
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Deadpool", "year": 2016, "runtime": "108 mins", "genres": ["action", "comedy"]}
+
+
+###
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "The Breakfast Club", "year": 1986, "runtime": "96 mins", "genres": ["drama"]}
