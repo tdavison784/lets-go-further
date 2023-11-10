@@ -5,10 +5,10 @@ import (
 	"errors"
 )
 
-// ErrorRecordNotFound Define a custom ErrRecordNotFound error. We'll return this from our Get() method
+// ErrRecordNotFound Define a custom ErrRecordNotFound error. We'll return this from our Get() method
 // when looking up a movie that doesn't exist
 var (
-	ErrRecrordNotFound = errors.New("record not found")
+	ErrRecordNotFound = errors.New("record not found")
 )
 
 // Models struct which wraps around MovieModel struct. We'll add other models to this

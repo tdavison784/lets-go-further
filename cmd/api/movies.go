@@ -1,11 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/validator"
 	"net/http"
-	"time"
 )
 
 func (app *application) createMovieHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,14 +70,20 @@ func (app *application) showMovieHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	movie := data.Movie{
-		ID:        id,
-		CreatedAt: time.Now(),
-		Title:     "CasaBlanca",
-		Runtime:   102,
-		Genres:    []string{"romance", "drama", "war"},
-		Year:      1982,
-		Version:   1,
+	// call Get() method to fetch a record from the DB by its ID.
+	// use the errors.Is() function to check if it returns a data.ErrRecordNotFound error
+	// in which case we send a 404 Not found response to the client
+	movie, err := app.models.Movies.Get(id)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+			return
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
 	}
 
 	err = app.writeJSON(w, http.StatusOK, envelope{"movie": movie}, nil)
