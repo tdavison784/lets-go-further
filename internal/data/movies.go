@@ -1,9 +1,50 @@
 package data
 
 import (
+	"database/sql"
+	"github.com/lib/pq"
 	"greenlight.twd.net/internal/validator"
 	"time"
 )
+
+// MovieModel defines struct type which wraps a sql.DB connection pool
+type MovieModel struct {
+	DB *sql.DB
+}
+
+// Insert inserting a new record into the movies table
+func (m MovieModel) Insert(movie *Movie) error {
+	// define sql query for inserting new movie records
+	query := `
+		INSERT INTO movies (title, year, runtime, genres)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, version`
+
+	// create an args slice containing the values for the placeholder params
+	// from the movie struct. Declaring this slice immediately next to our SQL query
+	// helps to make it nice and clear *what values are being used where* in the query.
+	args := []any{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+
+	// use QueryRow() method to execute the SQL query on our local connection pool
+	// passing in the args slice as a variadic parameter and scanning the system
+	// generated id, created_at, and version values into the movie struct
+	return m.DB.QueryRow(query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+}
+
+// Get a record from the movies table by its ID
+func (m MovieModel) Get(id int64) (*Movie, error) {
+	return nil, nil
+}
+
+// Update updates an existing record in the movies table
+func (m MovieModel) Update(movie *Movie) error {
+	return nil
+}
+
+// Delete remove a record from the movies table by its ID
+func (m MovieModel) Delete(id int64) error {
+	return nil
+}
 
 type Movie struct {
 	ID        int64     `json:"id"`
