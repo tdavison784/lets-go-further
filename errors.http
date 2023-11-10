@@ -1,0 +1,81 @@
+### Tests that will cause failures
+### test for unknown field name
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"], "stars": 4}
+
+
+### test for max bytes error
+POST localhost:8000/v1/movies
+Accept: application/json
+
+< ./large.json
+
+
+### test for multiple JSON values
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]}{"title": "Tommyboy"}
+
+
+### test for malformed JSON values
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": "102 mins", "genres": ["family", "adventure"]} :-()>
+
+
+### test invalid runtime format
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "runtime": 102, "genres": ["family", "adventure"]}
+
+
+### test for duplicate genres
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana", "year": 2017, "runtime": "102 mins", "genres": ["family", "family"]}
+
+
+### test for missing required field
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana",  "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+### test for invalid year
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana",  "year": 1886, "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+
+### test for no title
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"year": 2017, "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+
+### test for long title name
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "MoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaMoanaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",  "year": 2017, "runtime": "102 mins", "genres": ["family", "adventure"]}
+
+
+### test for too many genres
+POST localhost:8000/v1/movies/
+Accept: application/json
+
+{"title": "Moana",  "year": 2017, "runtime": "102 mins", "genres": ["family", "adventure", "animated", "feelgood", "kids", "islandy"]}
+
+
+### test for not enough genres
+POST localhost:8000/v1/movies/
+Accept: application/json
+
