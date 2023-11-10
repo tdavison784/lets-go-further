@@ -85,7 +85,7 @@ func (m MovieModel) Update(movie *Movie) error {
 		movie.Year,
 		movie.Runtime,
 		pq.Array(movie.Genres),
-		movie.Version,
+		movie.ID,
 	}
 
 	return m.DB.QueryRow(query, args...).Scan(&movie.Version)
