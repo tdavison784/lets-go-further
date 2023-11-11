@@ -17,8 +17,8 @@ func (app *application) LogError(r *http.Request, err error) {
 }
 
 // errorResponse method is a generic helper for sending JSON formatted error messages to the client with a given
-// status code. Note that we're using the any type for the message parameter, rather than just a string type,
-// as this gives us more flexability over the values that we can include in the response.
+// status code. Note that we're using any type for the message parameter, rather than just a string type,
+// as this gives us more flexibility over the values that we can include in the response.
 func (app *application) errorResponse(w http.ResponseWriter, r *http.Request, status int, message any) {
 	env := envelope{"error": message}
 
@@ -57,4 +57,9 @@ func (app *application) badRequestResponse(w http.ResponseWriter, r *http.Reques
 
 func (app *application) failedValidationResponse(w http.ResponseWriter, r *http.Request, errors map[string]string) {
 	app.errorResponse(w, r, http.StatusUnprocessableEntity, errors)
+}
+
+func (app *application) editConflictResponse(w http.ResponseWriter, r *http.Request) {
+	message := "unable to update the record due to an edit conflict, please try again"
+	app.errorResponse(w, r, http.StatusConflict, message)
 }
