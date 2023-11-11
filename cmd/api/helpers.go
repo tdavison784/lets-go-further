@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
+	"greenlight.twd.net/internal/validator"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -130,4 +132,59 @@ func (app *application) readJSON(w http.ResponseWriter, r *http.Request, dst any
 	}
 
 	return nil
+}
+
+// readString helper returns a string value from the query string, or the provided default value
+// if not matching key could be found.
+func (app *application) readString(qs url.Values, key string, defaultValue string) string {
+	// Extract the value for a given key from the query string.
+	// if no key exists this will return the empty string ""
+	s := qs.Get(key)
+
+	// if no key exists (or the value is empty) return the default value
+	if s == "" {
+		return defaultValue
+	}
+
+	// otherwise return s
+	return s
+}
+
+// readCSV helper reads a string value from the query string and then splits it
+// into a slice on the comma character. If no matching key could be found, it
+// returns the provided default value
+func (app *application) readCSV(qs url.Values, key string, defaultValue []string) []string {
+	// Extract the value of the query string
+	csv := qs.Get(key)
+
+	if csv == "" {
+		return defaultValue
+	}
+
+	return strings.Split(csv, ",")
+}
+
+// readInt helper reads a string value from the query string and converts it to an int
+// before returning. If no matching key could be found it returns the provided default value.
+// If the value couldn't be converted to an integer, then we record an error message in the
+// provided Validator instance
+func (app *application) readInt(qs url.Values, key string, defaultValue int, v *validator.Validator) int {
+	// Extract value from query string
+	s := qs.Get(key)
+
+	// if no key exists or value is empty return defaultValue
+	if s == "" {
+		return defaultValue
+	}
+
+	// Try to convert the value to an int. If this fails, add an error message
+	// to the validator instance and return the default value
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		v.AddError(key, "must be an integer value")
+		return defaultValue
+	}
+
+	// otherwise return i
+	return i
 }
