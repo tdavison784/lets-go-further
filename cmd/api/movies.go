@@ -208,11 +208,9 @@ func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request)
 	// to keep things consistent with our other handlers, we'll define an input struct
 	// to hold the expected values from the request query string
 	var input struct {
-		Title    string
-		Genres   []string
-		Page     int
-		PageSize int
-		Sort     string
+		Title  string
+		Genres []string
+		data.Filters
 	}
 
 	// create a new validator instance
@@ -229,12 +227,12 @@ func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request)
 	// get the page and page_size query string values as integers.
 	// notice we set the default page value to 1 and page_size to 20
 	// and that we pass the validator instance as the final argument here
-	input.Page = app.readInt(qs, "page", 1, v)
-	input.PageSize = app.readInt(qs, "page_size", 20, v)
+	input.Filters.Page = app.readInt(qs, "page", 1, v)
+	input.Filters.PageSize = app.readInt(qs, "page_size", 20, v)
 
 	// extract the sort query string value, falling back to "id" if it is not provided
 	// by the client (which will imply a ascending sort on movie ID)
-	input.Sort = app.readString(qs, "sort", "id")
+	input.Filters.Sort = app.readString(qs, "sort", "id")
 
 	// Check the validator instance for any errors and use the failedValidationResponse()
 	// helper to send the client a response if necessary
