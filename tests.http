@@ -3,7 +3,7 @@ GET http://localhost:8000/v1/movies/1
 Accept: application/json
 
 ### test calling all movies
-GET http://localhost:8000/v1/movies?title=tommyboy&page_size=abc
+GET http://localhost:8000/v1/movies
 
 ###
 GET http://localhost:8000/v1/healthcheck

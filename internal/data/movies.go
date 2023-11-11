@@ -81,6 +81,66 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 	return &movie, nil
 }
 
+// GetAll() retrieves all records from the movies table
+func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
+	// define the SQL query
+	query := `
+		SELECT id, created_at, title, year, runtime, genres, version
+		FROM movies
+		ORDER BY id`
+
+	// create a context with a 3-second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	// Importantly, defer a call to rows.Close() to ensure that the result set is closed
+	// before GetAll() returns
+	defer rows.Close()
+
+	// init an emtpy slice to hodl movie data
+	movies := []*Movie{}
+
+	// Use rows.Next to iterate through rows in the result set
+	for rows.Next() {
+		// init an empty movie struct to hold Movie data
+		var movie Movie
+
+		// scan the values from the row into the Movie struct. Again, note that we're
+		// using pq.Array() adapter on the genres field here.
+		err := rows.Scan(
+			&movie.ID,
+			&movie.CreatedAt,
+			&movie.Title,
+			&movie.Year,
+			&movie.Runtime,
+			pq.Array(&movie.Genres),
+			&movie.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		// add the Movie struct to the slice
+		movies = append(movies, &movie)
+	}
+
+	// When the rows.Next() loop has finished, call rows.Err() to retrieve any error
+	// that was encountered during the iteration
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// if everything went OK, then return the slice of movies
+	return movies, nil
+
+}
+
 // Update updates an existing record in the movies table
 func (m MovieModel) Update(movie *Movie) error {
 
