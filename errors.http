@@ -79,3 +79,7 @@ Accept: application/json
 POST localhost:8000/v1/movies/
 Accept: application/json
 
+### Test updating a partial resource and ensure that Validation still checks
+PATCH http://localhost:8000/v1/movies/4
+
+{"title": "", "year": 1985 }
