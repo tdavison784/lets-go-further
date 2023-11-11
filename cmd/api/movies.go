@@ -117,10 +117,10 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 
 	// declare an input struct to hold the expected data from the client
 	var input struct {
-		Title   string       `json:"title"`
-		Year    int32        `json:"year"`
-		Runtime data.Runtime `json:"runtime"`
-		Genres  []string     `json:"genres"`
+		Title   *string       `json:"title"`
+		Year    *int32        `json:"year"`
+		Runtime *data.Runtime `json:"runtime"`
+		Genres  []string      `json:"genres"`
 	}
 	err = app.readJSON(w, r, &input)
 	if err != nil {
@@ -128,11 +128,23 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// we check the struct to see if the pointer values are equal to their own types nil equivalent
+	// we are doing this, so we can handle partial updates
+	// If the fields we check are not equal to their nil equivalents
 	// copy the values from the request body to the appropriate fields of the movie record.
-	movie.Title = input.Title
-	movie.Year = input.Year
-	movie.Runtime = input.Runtime
-	movie.Genres = input.Genres
+	if input.Year != nil {
+		movie.Year = *input.Year
+
+	}
+	if input.Title != nil {
+		movie.Title = *input.Title
+	}
+	if input.Runtime != nil {
+		movie.Runtime = *input.Runtime
+	}
+	if input.Genres != nil {
+		movie.Genres = input.Genres
+	}
 
 	// run the validation checks
 	// Init new Validator instance
