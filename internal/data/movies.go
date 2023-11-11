@@ -1,9 +1,159 @@
 package data
 
 import (
+	"context"
+	"database/sql"
+	"errors"
+	"github.com/lib/pq"
 	"greenlight.twd.net/internal/validator"
 	"time"
 )
+
+// MovieModel defines struct type which wraps a sql.DB connection pool
+type MovieModel struct {
+	DB *sql.DB
+}
+
+// Insert inserting a new record into the movies table
+func (m MovieModel) Insert(movie *Movie) error {
+	// define sql query for inserting new movie records
+	query := `
+		INSERT INTO movies (title, year, runtime, genres)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id, created_at, version`
+
+	// create a context with a 3-second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+	// create an args slice containing the values for the placeholder params
+	// from the movie struct. Declaring this slice immediately next to our SQL query
+	// helps to make it nice and clear *what values are being used where* in the query.
+	args := []any{movie.Title, movie.Year, movie.Runtime, pq.Array(movie.Genres)}
+
+	// use QueryRow() method to execute the SQL query on our local connection pool
+	// passing in the args slice as a variadic parameter and scanning the system
+	// generated id, created_at, and version values into the movie struct
+	return m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.ID, &movie.CreatedAt, &movie.Version)
+}
+
+// Get a record from the movies table by its ID
+func (m MovieModel) Get(id int64) (*Movie, error) {
+
+	if id < 1 {
+		return nil, ErrRecordNotFound
+	}
+
+	// define sql query to read a record by its id
+	query := `
+		SELECT id, created_at, title, year, runtime, genres, version
+		FROM movies
+		WHERE id = $1`
+
+	var movie Movie
+
+	// create context
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	// Importantly, use defer to make sure that we cancel the context before the Get()
+	// method returns
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, id).Scan(
+		&movie.ID,
+		&movie.CreatedAt,
+		&movie.Title,
+		&movie.Year,
+		&movie.Runtime,
+		pq.Array(&movie.Genres),
+		&movie.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &movie, nil
+}
+
+// Update updates an existing record in the movies table
+func (m MovieModel) Update(movie *Movie) error {
+
+	// define the sql query to update a movie record
+	query := `
+		UPDATE movies
+		SET title = $1, year = $2, runtime = $3, genres = $4, version = version + 1
+		WHERE id = $5 AND version = $6
+		RETURNING version`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
+	// create args slice
+	args := []any{
+		movie.Title,
+		movie.Year,
+		movie.Runtime,
+		pq.Array(movie.Genres),
+		movie.ID,
+		movie.Version,
+	}
+
+	// Execute the query. If not matching row could be found
+	// we know the movie version has changed (or has been deleted)
+	// and we return our custom ErrEditConflict error
+	err := m.DB.QueryRowContext(ctx, query, args...).Scan(&movie.Version)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return ErrEditConflict
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+// Delete remove a record from the movies table by its ID
+func (m MovieModel) Delete(id int64) error {
+	if id < 1 {
+		return ErrRecordNotFound
+	}
+
+	// define query
+	query := `
+		DELETE FROM movies
+		where id = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+
+	defer cancel()
+
+	result, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	// call the RowsAffected() method on the sql.Result object to get a number of rows
+	// affected by the query
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	// if no rows were affected, we know that the movies table didn't contain a record with the provided
+	// id at the moment we tried to delete it. In that case we return an ErrRecordNotFound error
+	if rowsAffected == 0 {
+		return ErrRecordNotFound
+	}
+	return nil
+}
 
 type Movie struct {
 	ID        int64     `json:"id"`
