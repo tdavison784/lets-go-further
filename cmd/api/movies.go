@@ -116,6 +116,10 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	// declare an input struct to hold the expected data from the client
+	// in order to be able to do partial updates against the below struct
+	// we are going to use pointers to the underlying types
+	// we do this because when using a pointer to the type we can check to see
+	// if a user supplied a value for it, if they did the value will not be nil
 	var input struct {
 		Title   *string       `json:"title"`
 		Year    *int32        `json:"year"`
@@ -134,7 +138,6 @@ func (app *application) updateMovieHandler(w http.ResponseWriter, r *http.Reques
 	// copy the values from the request body to the appropriate fields of the movie record.
 	if input.Year != nil {
 		movie.Year = *input.Year
-
 	}
 	if input.Title != nil {
 		movie.Title = *input.Title
