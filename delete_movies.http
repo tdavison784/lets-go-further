@@ -1,0 +1,2 @@
+DELETE http://localhost:8000/v1/movies/3
+

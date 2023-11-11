@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+	"greenlight.twd.net/internal/data"
 	"log/slog"
 	"net/http"
 	"os"
@@ -35,6 +36,7 @@ type config struct {
 type application struct {
 	config config
 	logger *slog.Logger
+	models data.Models
 }
 
 func main() {
@@ -81,6 +83,7 @@ func main() {
 	app := application{
 		cfg,
 		logger,
+		data.NewModels(db),
 	}
 
 	// declare an HTTP server which listens on the port provided in the config struct as well as shows the env
