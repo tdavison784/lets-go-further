@@ -5,6 +5,10 @@ Accept: application/json
 ### test calling all movies
 GET http://localhost:8000/v1/movies
 
+
+### test calling movies with filters
+GET http://localhost:8000/v1/movies?genres=adventure
+
 ###
 GET http://localhost:8000/v1/healthcheck
 Accept: application/json

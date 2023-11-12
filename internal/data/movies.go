@@ -81,12 +81,14 @@ func (m MovieModel) Get(id int64) (*Movie, error) {
 	return &movie, nil
 }
 
-// GetAll() retrieves all records from the movies table
+// GetAll retrieves all records from the movies table
 func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*Movie, error) {
 	// define the SQL query
 	query := `
 		SELECT id, created_at, title, year, runtime, genres, version
 		FROM movies
+		WHERE (LOWER(title) = LOWER($1) or $1 = '')
+		AND (genres @> $2 OR $2 = '{}')
 		ORDER BY id`
 
 	// create a context with a 3-second timeout
@@ -94,7 +96,7 @@ func (m MovieModel) GetAll(title string, genres []string, filters Filters) ([]*M
 
 	defer cancel()
 
-	rows, err := m.DB.QueryContext(ctx, query)
+	rows, err := m.DB.QueryContext(ctx, query, title, pq.Array(genres))
 	if err != nil {
 		return nil, err
 	}

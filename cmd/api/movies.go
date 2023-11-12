@@ -248,7 +248,8 @@ func (app *application) listMovieHandler(w http.ResponseWriter, r *http.Request)
 		app.serverErrorResponse(w, r, err)
 	}
 
-	err = app.writeJSON(w, http.StatusOK, envelope{"movies": movies}, nil)
+	content := map[string]any{"count": len(movies), "records": movies}
+	err = app.writeJSON(w, http.StatusOK, envelope{"movies": content}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
