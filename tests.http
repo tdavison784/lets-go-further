@@ -9,6 +9,10 @@ GET http://localhost:8000/v1/movies
 ### test calling movies with filters
 GET http://localhost:8000/v1/movies?genres=adventure
 
+
+### test calling movies with partial name
+GET http://localhost:8000/v1/movies?title=club
+
 ###
 GET http://localhost:8000/v1/healthcheck
 Accept: application/json
