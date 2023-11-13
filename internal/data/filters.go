@@ -12,6 +12,16 @@ type Filters struct {
 	SortSafelist []string
 }
 
+// limit puts checks around the page size so we can control the number of items returned
+func (f Filters) limit() int {
+	return f.PageSize
+}
+
+// offset determines how many records we want to skip before returning our dataset
+func (f Filters) offset() int {
+	return (f.Page - 1) * f.PageSize
+}
+
 // sortColumn checks the client-provided sort field matches one of the entries in the Filters.SortSafelist list
 // and if it does, extract the column name from the Sort field by stripping the leading hyphen character (if one exists)
 func (f Filters) sortColumn() string {

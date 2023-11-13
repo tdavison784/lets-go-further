@@ -17,6 +17,9 @@ GET http://localhost:8000/v1/movies?title=club
 ### test calling movies with sort
 GET http://localhost:8000/v1/movies?sort=title
 
+### test calling movies with page_size
+GET http://localhost:8000/v1/movies?page_size=2&page=3
+
 ###
 GET http://localhost:8000/v1/healthcheck
 Accept: application/json
