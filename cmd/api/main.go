@@ -30,6 +30,14 @@ type config struct {
 		maxIdleConns int
 		maxIdleTime  time.Duration
 	}
+	// adding in a new limiter struct containing fields for the requests per second (rps)
+	// and burst values, and a boolean field which we use to enable/disable rate limiting
+	// altogether
+	limiter struct {
+		rps     float64
+		burst   int
+		enabled bool
+	}
 }
 
 // declare a struct that will hold all dependencies for our application's HTTP handlers, helpers, and middleware.
@@ -51,6 +59,9 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "number of maximum open DB connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "number of maximum idle DB connections")
 	flag.DurationVar(&cfg.db.maxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgresSQL max connection idle time")
+	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
+	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
+	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiting")
 	flag.Parse()
 
 	// initialize our logger
