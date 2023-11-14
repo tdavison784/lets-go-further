@@ -84,7 +84,7 @@ func (app *application) rateLimit(next http.Handler) http.Handler {
 		// check to see if the I.P address already exists in the map. If it doesn't
 		// then initialize a new rate limiter and add the I.P address and limiter to the map
 		if _, found := clients[ip]; !found {
-			clients[ip] = &client{limiter: rate.NewLimiter(2, 4)}
+			clients[ip] = &client{limiter: rate.NewLimiter(rate.Limit(app.config.limiter.rps), app.config.limiter.burst)}
 		}
 
 		// update the clients lastSeen time
