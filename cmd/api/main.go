@@ -4,10 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"greenlight.twd.net/internal/data"
 	"log/slog"
-	"net/http"
 	"os"
 	"time"
 
@@ -96,24 +94,11 @@ func main() {
 		logger,
 		data.NewModels(db),
 	}
-
-	// declare an HTTP server which listens on the port provided in the config struct as well as shows the env
-	// we will use the servermux from above as the handler, give some timeout settings and add our structured logging
-	srv := &http.Server{
-		Addr:         fmt.Sprintf(":%d", cfg.port),
-		Handler:      app.routes(),
-		IdleTimeout:  time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	err = app.server()
+	if err != nil {
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
-
-	// start the HTTP server
-	logger.Info("Starting Server", "addr", srv.Addr, "env", cfg.env)
-
-	err = srv.ListenAndServe()
-	logger.Error(err.Error())
-	os.Exit(1)
 }
 
 // openDB() helper function returns a sql.DB connection pool
