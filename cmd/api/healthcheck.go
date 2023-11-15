@@ -14,6 +14,13 @@ func (app *application) healthcheckHandler(w http.ResponseWriter, r *http.Reques
 		"Version":     version,
 	}
 
+	// uncomment this as a quick way to test graceful shutdowns
+	// on Mac use ps -ef |grep api command to get the P.I.D
+	// then run curl localhost:<port>/v1/healthcheck & pkill -15 -P <P.I.D>
+	// in a separate terminal window. You will see the app server log the shutdown started
+	// and shutdown complete messages after the requests have finished.
+	//time.Sleep(4*time.Second)
+
 	err := app.writeJSON(w, http.StatusOK, envelope{"status": data}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
