@@ -72,6 +72,14 @@ func (app *application) server() error {
 		return err
 	}
 
+	// otherwise, we wait to receive the return value from Shutdown() on the
+	// shutdownError channel. If return value is an error, we know that there
+	// was a problem with the graceful shutdown and we return the error.
+	err = <-shutdownError
+	if err != nil {
+		return err
+	}
+
 	// at this point we know the graceful shutdown completed successfully, and we
 	// log a "stopped server" message
 	app.logger.Info("stopped server", "addr", srv.Addr)
