@@ -16,6 +16,7 @@ var (
 // like a UserModel and PermissionsModel
 type Models struct {
 	Movies MovieModel
+	Users  UserModel
 }
 
 // NewModels is a helper func that returns a Models struct containing
@@ -23,5 +24,6 @@ type Models struct {
 func NewModels(db *sql.DB) Models {
 	return Models{
 		Movies: MovieModel{DB: db},
+		Users:  UserModel{DB: db},
 	}
 }
