@@ -141,3 +141,41 @@ func (m UserModel) Insert(user *User) error {
 	}
 	return nil
 }
+
+// GetByEmail will query for the users email address. Since this is a UNIQUE
+// value this will return one record, or none at all (in which we then return ErrRecordNotFound error)
+func (m UserModel) GetByEmail(email string) (*User, error) {
+
+	// define the query
+	query := `
+		SELECT id, created_at, name, email, password_hash, activated, version
+		FROM users
+		WHERE email = $1`
+
+	var user User
+
+	// create context with 3-second timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := m.DB.QueryRowContext(ctx, query, email).Scan(
+		&user.ID,
+		&user.CreatedAt,
+		&user.Name,
+		&user.Email,
+		&user.Password.hash,
+		&user.Activated,
+		&user.Version,
+	)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, ErrRecordNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
