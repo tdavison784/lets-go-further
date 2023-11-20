@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"flag"
 	"greenlight.twd.net/internal/data"
+	"greenlight.twd.net/internal/mailer"
 	"log/slog"
 	"os"
 	"time"
@@ -36,6 +37,14 @@ type config struct {
 		burst   int
 		enabled bool
 	}
+
+	smtp struct {
+		host     string
+		port     int
+		username string
+		password string
+		sender   string
+	}
 }
 
 // declare a struct that will hold all dependencies for our application's HTTP handlers, helpers, and middleware.
@@ -43,6 +52,7 @@ type application struct {
 	config config
 	logger *slog.Logger
 	models data.Models
+	mailer mailer.Mailer
 }
 
 func main() {
@@ -60,6 +70,12 @@ func main() {
 	flag.Float64Var(&cfg.limiter.rps, "limiter-rps", 2, "Rate limiter maximum requests per second")
 	flag.IntVar(&cfg.limiter.burst, "limiter-burst", 4, "Rate limiter maximum burst")
 	flag.BoolVar(&cfg.limiter.enabled, "limiter-enabled", true, "Enable rate limiting")
+	flag.StringVar(&cfg.smtp.host, "smtp-host", "sandbox.smtp.mailtrap.io", "host connection string to SMTP server")
+	flag.IntVar(&cfg.smtp.port, "smtp-port", 2525, "port of SMTP server")
+	flag.StringVar(&cfg.smtp.username, "smtp-username", os.Getenv("smtpUser"), "username for authenticating to SMTP server")
+	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("smtpPass"), "password for authenticating to SMTP server")
+	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.twd.net>", "SMTP sender")
+
 	flag.Parse()
 
 	// initialize our logger
@@ -93,6 +109,7 @@ func main() {
 		cfg,
 		logger,
 		data.NewModels(db),
+		mailer.New(cfg.smtp.host, cfg.smtp.port, cfg.smtp.username, cfg.smtp.password, cfg.smtp.sender),
 	}
 	err = app.server()
 	if err != nil {
