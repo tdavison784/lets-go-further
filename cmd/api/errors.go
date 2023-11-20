@@ -68,3 +68,8 @@ func (app *application) rateLimitExceededResponse(w http.ResponseWriter, r *http
 	message := "rate limit exceeded"
 	app.errorResponse(w, r, http.StatusTooManyRequests, message)
 }
+
+func (app *application) emailNotFoundResponse(w http.ResponseWriter, r *http.Request) {
+	message := "No account found by email"
+	app.errorResponse(w, r, http.StatusNotFound, message)
+}
