@@ -67,8 +67,22 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Call the Send() method on our Mailer, Passing in the user's email address
+	// name of the template file, and the User struct containing the new users data
+	// below we place the email confirmation sending into a custom helper
+	// to run the code in a goroutine in the background
+	// this improves the HTTP request time significantly as we are no longer waiting for the
+	// email to be sent before returning a response to our End user.
+
+	app.background(func() {
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+		if err != nil {
+			app.logger.Error("Failed to send confirmation email.", "error", err.Error())
+		}
+	})
+
 	// write JSON response containing the data along with a 201 created status code
-	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
+	err = app.writeJSON(w, http.StatusAccepted, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 	}
