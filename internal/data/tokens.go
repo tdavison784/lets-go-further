@@ -1,11 +1,18 @@
 package data
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/base32"
+	"greenlight.twd.net/internal/validator"
 	"time"
 )
+
+type TokenModel struct {
+	DB *sql.DB
+}
 
 // ScopeActivation Defines constants for the token scope. For now, we just define the scope 'activation'
 // but we'll add additional scopes later in the book
@@ -67,4 +74,60 @@ func generateToken(userID int64, ttl time.Duration, scope string) (*Token, error
 	token.Hash = hash[:]
 
 	return token, nil
+}
+
+// ValidateToken Check that the plaintext token has been provided and is exactly 26 bytes long
+func ValidateToken(v *validator.Validator, tokenPlainText string) {
+	v.Check(tokenPlainText != "", "token", "must be provided")
+	v.Check(len(tokenPlainText) == 26, "token", "must be 26 bytes long")
+}
+
+// New method is a shortcut which creates a new Token struct and then inserts the data into the tokens table
+func (m TokenModel) New(userID int64, ttl time.Duration, scope string) (*Token, error) {
+	token, err := generateToken(userID, ttl, scope)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.Insert(token)
+	if err != nil {
+		return nil, err
+	}
+
+	return token, err
+}
+
+// Insert creates new record in tokens table
+func (m TokenModel) Insert(token *Token) error {
+	// define query
+	query := `
+		INSERT INTO tokens (hash, user_id, expiry, scope)
+		VALUES ($1, $2, $3, $4)`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	args := []any{
+		token.Hash,
+		token.UserID,
+		token.Expiry,
+		token.Scope,
+	}
+
+	_, err := m.DB.ExecContext(ctx, query, args...)
+	return err
+}
+
+// DeleteAllForUser deletes all known tokens for a specific user and scope
+func (m TokenModel) DeleteAllForUser(scope string, userID int64) error {
+	// define query
+	query := `
+		DELETE FROM tokens
+		WHERE scope = $1 AND user_id = $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, scope, userID)
+	return err
 }
