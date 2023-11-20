@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/validator"
 	"net/http"
@@ -73,6 +74,15 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	// this improves the HTTP request time significantly as we are no longer waiting for the
 	// email to be sent before returning a response to our End user.
 	go func() {
+
+		// Run a deferred function which uses recover() to catch any panic,
+		// and log an error message instead of terminating the application
+		defer func() {
+			if err := recover(); err != nil {
+				app.logger.Error(fmt.Sprintf("%v", err))
+			}
+		}()
+
 		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
 		if err != nil {
 			app.logger.Error("Failed to send confirmation email.", "error", err.Error())
