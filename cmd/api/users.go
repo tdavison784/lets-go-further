@@ -5,6 +5,7 @@ import (
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/validator"
 	"net/http"
+	"time"
 )
 
 // registerUserHandler is used to create new users in our system
@@ -67,6 +68,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// After the user record has been created in the database,
+	// generate a new activation token for the user
+	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// Call the Send() method on our Mailer, Passing in the user's email address
 	// name of the template file, and the User struct containing the new users data
 	// below we place the email confirmation sending into a custom helper
@@ -75,7 +84,15 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	// email to be sent before returning a response to our End user.
 
 	app.background(func() {
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+
+		// As there are now multiple pieces of data that we want to pass to our email templates,
+		// we create a map to act as a 'holding structure' for the data. This contains
+		// the plaintext version of the activation token for the user, along with their User ID
+		tokenData := map[string]any{
+			"activationToken": token.Plaintext,
+			"userID":          token.UserID,
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", tokenData)
 		if err != nil {
 			app.logger.Error("Failed to send confirmation email.", "error", err.Error())
 		}
