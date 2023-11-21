@@ -24,8 +24,10 @@ func (app *application) generateTokenHandler(w http.ResponseWriter, r *http.Requ
 		switch {
 		case errors.Is(err, data.ErrRecordNotFound):
 			app.emailNotFoundResponse(w, r)
+			return
 		default:
 			app.serverErrorResponse(w, r, err)
+			return
 		}
 	}
 	token, err := app.models.Tokens.New(userData.ID, 3*24*time.Hour, data.ScopeActivation)
