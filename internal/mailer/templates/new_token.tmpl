@@ -1,11 +1,7 @@
-{{ define "subject" }}Welcome to Greenlight!{{end}}
+{{ define "subject" }}New Activation Token{{end}}
 
 {{define "plainBody"}}
-Hi,
-
-Thanks for signing up for a Greenlight account. We're excited to have you on board!
-
-For future reference, your user ID number is {{.userID}}
+User: {{.userName}} requested a new activation token.
 
 Please send a request o the `PUT /v1/users/activated` endpoint with the following JSON payload to activate your account:
 
@@ -28,9 +24,7 @@ The Greenlight Team
 </head>
 
 <body>
-    <p>Hi,</p>
-    <p>Thanks for signing up for a Greenlight account. We're excited to have you on board!</p>
-    <p>For future reference, your user ID number is {{.userID}} </p>
+    <p>User: {{.userName}} requested a new activation token.</p>
     <p>Please send a request o the <code>PUT /v1/users/activated</code> endpoint with the following JSON payload to activate your account:</p>
     <p>{"token": "{{.activationToken}}"}</p>
     <p>Please note that this is a one-time use token and will expire in 3 days.</p>

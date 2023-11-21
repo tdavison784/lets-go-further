@@ -5,6 +5,7 @@ import (
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/validator"
 	"net/http"
+	"time"
 )
 
 // registerUserHandler is used to create new users in our system
@@ -67,6 +68,14 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// After the user record has been created in the database,
+	// generate a new activation token for the user
+	token, err := app.models.Tokens.New(user.ID, 3*24*time.Hour, data.ScopeActivation)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
 	// Call the Send() method on our Mailer, Passing in the user's email address
 	// name of the template file, and the User struct containing the new users data
 	// below we place the email confirmation sending into a custom helper
@@ -75,7 +84,15 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	// email to be sent before returning a response to our End user.
 
 	app.background(func() {
-		err = app.mailer.Send(user.Email, "user_welcome.tmpl", user)
+
+		// As there are now multiple pieces of data that we want to pass to our email templates,
+		// we create a map to act as a 'holding structure' for the data. This contains
+		// the plaintext version of the activation token for the user, along with their User ID
+		tokenData := map[string]any{
+			"activationToken": token.Plaintext,
+			"userID":          token.UserID,
+		}
+		err = app.mailer.Send(user.Email, "user_welcome.tmpl", tokenData)
 		if err != nil {
 			app.logger.Error("Failed to send confirmation email.", "error", err.Error())
 		}
@@ -87,4 +104,71 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.serverErrorResponse(w, r, err)
 	}
 
+}
+
+// activateUserHandler is used to activate users based on their activation token
+func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
+
+	var input struct {
+		TokenPlaintext string `json:"token"`
+	}
+
+	err := app.readJSON(w, r, &input)
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	v := validator.New()
+
+	if data.ValidateToken(v, input.TokenPlaintext); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
+
+	// Retrieve the details of the user associated with the token using the
+	// GetForToken() method. If no matching record is found, then we let
+	// the client know that the token provided is not valid.
+	user, err := app.models.Users.GetForToken(data.ScopeActivation, input.TokenPlaintext)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrRecordNotFound):
+			v.AddError("token", "invalid or expired activation token")
+			app.failedValidationResponse(w, r, v.Errors)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// activate the user if all the above checks pass
+	user.Activated = true
+
+	// save the updated user record in our database, checking for any edit conflicts
+	// in the same way we did for our movie records
+	err = app.models.Users.Update(user)
+	if err != nil {
+		switch {
+		case errors.Is(err, data.ErrEditConflict):
+			app.editConflictResponse(w, r)
+		case errors.Is(err, data.ErrRecordNotFound):
+			app.notFoundResponse(w, r)
+		default:
+			app.serverErrorResponse(w, r, err)
+		}
+		return
+	}
+
+	// if everything went successfully, then we delete all activation token for the user
+	err = app.models.Tokens.DeleteAllForUser(data.ScopeActivation, user.ID)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+		return
+	}
+
+	// send updated user details to the client
+	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
+	}
 }
