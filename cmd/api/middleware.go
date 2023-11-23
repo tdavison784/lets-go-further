@@ -176,3 +176,28 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func (app *application) requireActivatedUser(next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// use the contextGetUser() helper that we made to retrieve the user information
+		// from the request context
+		user := app.contextGetUser(r)
+
+		// if the user is anonymous, then call the authenticationRequiredResponse()
+		// to inform the client that they must authenticate and try again
+		if user.IsAnonymous() {
+			app.authenticationRequiredResponse(w, r)
+			return
+		}
+
+		// if the user is not activated, then we call the inactiveAccountResponse helper
+		// to inform the client that they must activate their account and try again
+		if !user.Activated {
+			app.inactiveAccountResponse(w, r)
+			return
+		}
+
+		// call the next handler in the chain
+		next.ServeHTTP(w, r)
+	})
+}
