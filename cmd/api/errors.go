@@ -73,3 +73,15 @@ func (app *application) emailNotFoundResponse(w http.ResponseWriter, r *http.Req
 	message := "No account found by email"
 	app.errorResponse(w, r, http.StatusNotFound, message)
 }
+
+func (app *application) invalidCredentialResponse(w http.ResponseWriter, r *http.Request) {
+	message := "invalid credentials. Please validate and try again."
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
+
+func (app *application) invalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("WWW-Authenticate", "Bearer")
+
+	message := "invalid or missing authentication token."
+	app.errorResponse(w, r, http.StatusUnauthorized, message)
+}
