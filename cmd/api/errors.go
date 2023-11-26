@@ -95,3 +95,8 @@ func (app *application) inactiveAccountResponse(w http.ResponseWriter, r *http.R
 	message := "your user account must be activated to view this resource"
 	app.errorResponse(w, r, http.StatusForbidden, message)
 }
+
+func (app *application) notPermittedResponse(w http.ResponseWriter, r *http.Request) {
+	message := "You do not have sufficient permissions to access this resource"
+	app.errorResponse(w, r, http.StatusForbidden, message)
+}

@@ -3,6 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -13,7 +14,9 @@ type Permissions []string
 // Include is a helper method to check whether the Permissions slice contains
 // a specific permissions code
 func (p Permissions) Include(code string) bool {
+	fmt.Println(p)
 	for i := range p {
+		fmt.Println("I am here")
 		if code == p[i] {
 			return true
 		}
@@ -34,7 +37,7 @@ func (m PermissionsModel) GetAllForUser(userID int64) (Permissions, error) {
 	query := `
 		SELECT permissions.code
 		FROM permissions
-		INNER JOIN users_permissions ON users_permissions.permission_id = permission_id
+		INNER JOIN users_permissions ON users_permissions.permission_id = permissions.id
 		INNER JOIN users ON users_permissions.user_id = users.id
 		WHERE users.id = $1`
 
