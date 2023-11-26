@@ -3,7 +3,7 @@ package data
 import (
 	"context"
 	"database/sql"
-	"fmt"
+	"github.com/lib/pq"
 	"time"
 )
 
@@ -14,9 +14,7 @@ type Permissions []string
 // Include is a helper method to check whether the Permissions slice contains
 // a specific permissions code
 func (p Permissions) Include(code string) bool {
-	fmt.Println(p)
 	for i := range p {
-		fmt.Println("I am here")
 		if code == p[i] {
 			return true
 		}
@@ -70,4 +68,18 @@ func (m PermissionsModel) GetAllForUser(userID int64) (Permissions, error) {
 
 	return permissions, nil
 
+}
+
+// AddForUser method is used to grant roles to users based off their id
+func (m PermissionsModel) AddForUser(userID int64, codes ...string) error {
+	// define our query
+	query := `
+		INSERT INTO users_permissions
+		SELECT $1, permissions.id FROM permissions WHERE permissions.code = ANY($2)`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	_, err := m.DB.ExecContext(ctx, query, userID, pq.Array(codes))
+	return err
 }
