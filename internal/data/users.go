@@ -37,10 +37,10 @@ type User struct {
 	Version   int       `json:"-"`
 }
 
-// check if a user instance is the Anonymous user type
+// IsAnonymous check if a user instance is the Anonymous user type
 // what this is doing is checking if the current user
 // details provided by the client is empty
-func (u *User) isAnonymous() bool {
+func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
 }
 
