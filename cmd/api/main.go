@@ -8,6 +8,7 @@ import (
 	"greenlight.twd.net/internal/mailer"
 	"log/slog"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,10 @@ type config struct {
 		password string
 		sender   string
 	}
+
+	cors struct {
+		trustedOrigins []string
+	}
 }
 
 // declare a struct that will hold all dependencies for our application's HTTP handlers, helpers, and middleware.
@@ -78,6 +83,16 @@ func main() {
 	flag.StringVar(&cfg.smtp.password, "smtp-password", os.Getenv("smtpPass"), "password for authenticating to SMTP server")
 	flag.StringVar(&cfg.smtp.sender, "smtp-sender", "Greenlight <no-reply@greenlight.twd.net>", "SMTP sender")
 
+	// Use the flag.Func() function to process the -cors-trusted-origins CLI flag.
+	// In this we use the strings.Fields() function to split the flag value into a
+	// slice based on whitespace characters and assign it to our config struct.
+	// Importantly, if the -cors-trusted-origins flag is not present, contains
+	// the empty string, or contains only whitespaces, then strings.Fields()
+	// will return an empty []string slice
+	flag.Func("cors-trusted-origins", "Trusted CORS origins (space seperated)", func(val string) error {
+		cfg.cors.trustedOrigins = strings.Fields(val)
+		return nil
+	})
 	flag.Parse()
 
 	// initialize our logger
