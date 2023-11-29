@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/mailer"
@@ -64,6 +65,8 @@ type application struct {
 
 func main() {
 
+	// Publish a new "version" variable in the expvar handler containing our application version
+	expvar.NewString("version").Set(version)
 	// declare an instance of our config struct
 	var cfg config
 
