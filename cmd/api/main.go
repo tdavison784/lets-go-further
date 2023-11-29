@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"flag"
 	"greenlight.twd.net/internal/data"
 	"greenlight.twd.net/internal/mailer"
 	"log/slog"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -120,6 +122,24 @@ func main() {
 
 	// log that a connection pool has been established
 	logger.Info("Successfully established database connection")
+
+	// Publish a new "version" variable in the expvar handler containing our application version
+	expvar.NewString("version").Set(version)
+
+	// Publish the number of active goroutines
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+
+	// Publish database connection pool statistics
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+
+	// Publish current UNIX timestamp
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 
 	// declare an instance of the app struct, containing the config and our logger
 	app := application{
